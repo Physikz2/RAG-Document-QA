@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG Document QA System</title>
+    <style>
+        /* ============================================
+           RESET - Remove default browser styles
+           ============================================ */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;  /* Makes sizing easier */
+        }
+        
+        /* ============================================
+           BODY - Full page gradient background
+           ============================================ */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;           /* Full viewport height */
+            display: flex;               /* Flexbox for centering */
+            justify-content: center;     /* Center horizontally */
+            align-items: center;         /* Center vertically */
+            padding: 20px;
+        }
+        
+        /* ============================================
+           CONTAINER - White card in the middle
+           ============================================ */
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 800px;             /* Won't get too wide on big screens */
+            width: 100%;
+        }
+        
+        /* ============================================
+           HEADER - Title and subtitle
+           ============================================ */
+        h1 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 10px;
+            display: flex;               /* Aligns emoji with text */
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+        
+        /* ============================================
+           SECTIONS - Each major area (Upload, Ask, Answer)
+           ============================================ */
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;          /* Light gray background */
+            border-radius: 12px;
+        }
+        
+        .section h2 {
+            color: #444;
+            font-size: 18px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        /* ============================================
+           UPLOAD AREA - Drag & drop zone
+           ============================================ */
+        .upload-area {
+            border: 2px dashed #ccc;      /* Dashed border = "drop here" */
+            padding: 30px;
+            text-align: center;
+            border-radius: 12px;
+            transition: all 0.3s ease;    /* Smooth hover effect */
+            cursor: pointer;
+        }
+        
+        .upload-area:hover {
+            border-color: #667eea;        /* Purple on hover */
+            background: rgba(102, 126, 234, 0.05);
+        }
+        
+        .upload-area.dragover {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.1);  /* Darker when dragging over */
+        }
+        
+        .upload-icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+        }
+        
+        .upload-text {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        /* ============================================
+           FILE INPUT - Hidden, triggered by click
+           ============================================ */
+        .file-input {
+            display: none;               /* Hidden because we use custom UI */
+        }
+        
+        /* ============================================
+           FILE INFO - Shows selected file name
+           ============================================ */
+        .file-info {
+            margin-top: 10px;
+            padding: 10px;
+            background: #e8f4fd;
+            border-radius: 8px;
+            color: #0056b3;
+            font-size: 14px;
+        }
+        
+        /* ============================================
+           BUTTONS - Primary, Danger, Secondary
+           ============================================ */
+        .btn {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: #667eea;          /* Purple primary button */
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);  /* Slight lift on hover */
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+        
+        .btn-secondary:hover {
+            background: #d0d0d0;
+        }
+        
+        .btn-danger {
+            background: #dc3545;          /* Red - for dangerous actions */
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        
+        /* ============================================
+           QUESTION AREA - Input + Ask button
+           ============================================ */
+        .question-area {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .question-input {
+            flex: 1;                     /* Takes remaining space */
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+        
+        .question-input:focus {
+            outline: none;
+            border-color: #667eea;       /* Purple border on focus */
+        }
+        
+        /* ============================================
+           ANSWER AREA - Shows the response
+           ============================================ */
+        .answer-area {
+            margin-top: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            display: none;               /* Hidden until there's an answer */
+        }
+        
+        .answer-area.visible {
+            display: block;              /* Shown when 'visible' class is added */
+        }
+        
+        .answer-text {
+            color: #333;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+        
+        /* ============================================
+           SOURCES - Shows the chunks used
+           ============================================ */
+        .sources {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #e0e0e0;
+        }
+        
+        .sources-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .source-item {
+            font-size: 13px;
+            color: #888;
+            padding: 5px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .source-item:last-child {
+            border-bottom: none;         /* No border on last item */
+        }
+        
+        /* ============================================
+           STATUS MESSAGES - Info, Success, Error
+           ============================================ */
+        .status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .status.info {
+            background: #cce5ff;
+            color: #004085;
+        }
+        
+        /* ============================================
+           SPINNER - Loading animation
+           ============================================ */
+        .spinner {
+            display: inline-block;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        /* ============================================
+           BADGE - Small status indicator
+           ============================================ */
+        .badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .badge.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .badge.warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        /* ============================================
+           LOADING STATE - Disables interactions
+           ============================================ */
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;        /* Prevents clicks while loading */
+        }
+        
+        /* ============================================
+           RESPONSIVE - Mobile-friendly
+           ============================================ */
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+            
+            .question-area {
+                flex-direction: column;  /* Stack input + button on mobile */
+            }
+            
+            .btn {
+                width: 100%;             /* Full-width buttons on mobile */
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- ============================================
+    MAIN CONTAINER - Everything goes inside this card
+    ============================================ -->
+    <div class="container">
+        
+        <!-- ==================== HEADER ==================== -->
+        <h1>📄 RAG Document QA</h1>
+        <p class="subtitle">Upload a document and ask questions about it using AI</p>
+        
+        <!-- ==================== UPLOAD SECTION ==================== -->
+        <div class="section">
+            <h2>📤 Upload Document</h2>
+            
+            <!-- Drag & drop zone -->
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📂</div>
+                <div class="upload-text">
+                    <strong>Click to upload</strong> or drag and drop<br>
+                    Supports PDF and text files
+                </div>
+                <!-- Hidden file input - triggered by clicking the upload area -->
+                <input type="file" class="file-input" id="fileInput" accept=".pdf,.txt">
+            </div>
+            
+            <!-- Shows selected file name -->
+            <div id="fileInfo" class="file-info" style="display: none;"></div>
+            
+            <!-- Upload buttons -->
+            <div style="margin-top: 15px; display: flex; gap: 10px;">
+                <button class="btn btn-primary" id="uploadBtn" disabled>📤 Process Document</button>
+                <button class="btn btn-danger" id="clearBtn">Clear Document</button>
+            </div>
+            
+            <!-- Status messages for upload -->
+            <div id="uploadStatus"></div>
+        </div>
+        
+        <!-- ==================== QUESTION SECTION ==================== -->
+        <div class="section">
+            <h2>❓ Ask a Question</h2>
+            <div class="question-area">
+                <input type="text" class="question-input" id="questionInput" placeholder="What would you like to know about the document?" disabled>
+                <button class="btn btn-primary" id="askBtn" disabled>Ask</button>
+            </div>
+            <!-- Status messages for questions -->
+            <div id="questionStatus"></div>
+        </div>
+        
+        <!-- ==================== ANSWER SECTION ==================== -->
+        <div class="answer-area" id="answerArea">
+            <div class="answer-text" id="answerText"></div>
+            <div class="sources">
+                <div class="sources-title">📚 Sources</div>
+                <div id="sourcesList"></div>
+            </div>
+        </div>
+        
+        <!-- ==================== SYSTEM STATUS ==================== -->
+        <div id="systemStatus" class="status info">System ready. Please upload a document.</div>
+    </div>
+    
+    <!-- ============================================
+    JAVASCRIPT - All the interactive logic
+    ============================================ -->
+    <script>
+        // ============================================
+        // CONFIGURATION - Change this when deploying!
+        // ============================================
+        // For LOCAL testing: 'http://localhost:8000'
+        // For PRODUCTION: 'https://your-backend-url.onrender.com'
+        const BACKEND_URL = 'https://rag-document-qa-ty6i.onrender.com';  // ✅ FIXED for local testing!
+        
+        // ============================================
+        // DOM REFERENCES - Get all the HTML elements
+        // ============================================
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const questionInput = document.getElementById('questionInput');
+        const askBtn = document.getElementById('askBtn');
+        const answerArea = document.getElementById('answerArea');
+        const answerText = document.getElementById('answerText');
+        const sourcesList = document.getElementById('sourcesList');
+        const uploadStatus = document.getElementById('uploadStatus');
+        const questionStatus = document.getElementById('questionStatus');
+        const systemStatus = document.getElementById('systemStatus');
+        
+        // ============================================
+        // STATE - Track what's happening
+        // ============================================
+        let selectedFile = null;          // The file the user selected
+        let hasDocument = false;          // Whether a document is loaded in the backend
+        
+        // ============================================
+        // CHECK BACKEND STATUS - Runs on page load
+        // ============================================
+        async function checkStatus() {
+            try {
+                const response = await fetch(`${BACKEND_URL}/status`);
+                if (response.ok) {
+                    const data = await response.json();
+                    hasDocument = data.has_document;  // True if document is loaded
+                    updateUI();
+                    setStatus('info', 'System ready. ' + (hasDocument ? 'Document loaded.' : 'Upload a document.'));
+                } else {
+                    setStatus('error', 'Backend server is running but returned error. Please check the logs.');
+                }
+            } catch (error) {
+                // This happens if backend isn't running or CORS is blocked
+                setStatus('error', 'Cannot connect to backend. Make sure the server is running and CORS is configured.');
+                console.error('Status check error:', error);
+            }
+        }
+        
+        // ============================================
+        // UPDATE UI - Enable/disable buttons based on state
+        // ============================================
+        function updateUI() {
+            const hasFile = selectedFile !== null;
+            
+            // Upload button: enabled only if a file is selected
+            uploadBtn.disabled = !hasFile;
+            
+            // Question input + button: enabled only if a document is loaded
+            questionInput.disabled = !hasDocument;
+            askBtn.disabled = !hasDocument;
+            
+            // Show/hide file info
+            if (hasFile) {
+                fileInfo.style.display = 'block';
+                fileInfo.textContent = `📎 ${selectedFile.name} (${(selectedFile.size / 1024).toFixed(1)} KB)`;
+            } else {
+                fileInfo.style.display = 'none';
+            }
+        }
+        
+        // ============================================
+        // SET STATUS - Update the system status message
+        // ============================================
+        function setStatus(type, message) {
+            systemStatus.className = `status ${type}`;  // info, success, error
+            systemStatus.textContent = message;
+        }
+        
+        // ============================================
+        // SET UPLOAD STATUS - Update upload section messages
+        // ============================================
+        function setUploadStatus(type, message) {
+            uploadStatus.className = `status ${type}`;
+            uploadStatus.textContent = message;
+        }
+        
+        // ============================================
+        // SET QUESTION STATUS - Update question section messages
+        // ============================================
+        function setQuestionStatus(type, message) {
+            questionStatus.className = `status ${type}`;
+            questionStatus.textContent = message;
+        }
+        
+        // ============================================
+        // UPLOAD FILE - Send the selected file to the backend
+        // ============================================
+        async function uploadFile() {
+            if (!selectedFile) return;
+            
+            // Create FormData (multipart/form-data)
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            
+            // Disable button and show spinner
+            uploadBtn.disabled = true;
+            uploadBtn.innerHTML = '<span class="spinner">⏳</span> Uploading...';
+            setUploadStatus('info', 'Uploading and processing document...');
+            
+            try {
+                // POST to /upload endpoint
+                const response = await fetch(`${BACKEND_URL}/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Success!
+                    hasDocument = true;
+                    setUploadStatus('success', `✅ ${data.message} (${data.chunk_count} chunks processed)`);
+                    setStatus('success', `Document "${selectedFile.name}" loaded successfully!`);
+                    updateUI();
+                    
+                    // Clear file selection after successful upload
+                    selectedFile = null;
+                    fileInput.value = '';
+                    fileInfo.style.display = 'none';
+                    uploadBtn.disabled = true;
+                    
+                    // Enable question section
+                    questionInput.disabled = false;
+                    askBtn.disabled = false;
+                    
+                    // Visual feedback - green border
+                    uploadArea.style.borderColor = '#28a745';
+                    uploadArea.style.background = 'rgba(40, 167, 69, 0.05)';
+                } else {
+                    setUploadStatus('error', `❌ ${data.detail || 'Upload failed'}`);
+                }
+            } catch (error) {
+                setUploadStatus('error', `❌ Error: ${error.message}`);
+                console.error('Upload error:', error);
+            } finally {
+                // Re-enable button
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = 'Process Document';
+            }
+        }
+        
+        // ============================================
+        // ASK QUESTION - Send question to the backend
+        // ============================================
+        async function askQuestion() {
+            const question = questionInput.value.trim();
+            if (!question) {
+                setQuestionStatus('error', 'Please enter a question.');
+                return;
+            }
+            
+            if (!hasDocument) {
+                setQuestionStatus('error', 'Please upload a document first.');
+                return;
+            }
+            
+            // Disable button and show spinner
+            askBtn.disabled = true;
+            askBtn.innerHTML = '<span class="spinner">⏳</span> Thinking...';
+            setQuestionStatus('info', 'Processing your question...');
+            
+            try {
+                // POST to /ask endpoint with JSON body
+                const response = await fetch(`${BACKEND_URL}/ask`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ question })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Display the answer
+                    answerArea.classList.add('visible');
+                    answerText.textContent = data.answer;
+                    
+                    // Display sources (the chunks used to generate the answer)
+                    sourcesList.innerHTML = '';
+                    if (data.sources && data.sources.length > 0) {
+                        data.sources.forEach((source, index) => {
+                            const div = document.createElement('div');
+                            div.className = 'source-item';
+                            // Show first 200 chars of each source
+                            div.textContent = `Source ${index + 1}: ${source.content.substring(0, 200)}...`;
+                            sourcesList.appendChild(div);
+                        });
+                    } else {
+                        sourcesList.innerHTML = '<div class="source-item">No sources available</div>';
+                    }
+                    
+                    setQuestionStatus('success', '✅ Answer generated successfully!');
+                } else {
+                    setQuestionStatus('error', `❌ ${data.detail || 'Question failed'}`);
+                }
+            } catch (error) {
+                setQuestionStatus('error', `❌ Error: ${error.message}`);
+                console.error('Question error:', error);
+            } finally {
+                // Re-enable button
+                askBtn.disabled = false;
+                askBtn.textContent = 'Ask';
+            }
+        }
+        
+        // ============================================
+        // CLEAR DOCUMENT - Remove document from backend
+        // ============================================
+        async function clearDocument() {
+            if (!confirm('Are you sure you want to clear the current document?')) return;
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/clear`, {
+                    method: 'POST'
+                });
+                
+                if (response.ok) {
+                    hasDocument = false;
+                    answerArea.classList.remove('visible');  // Hide answer
+                    setStatus('info', 'Document cleared. Upload a new document.');
+                    updateUI();
+                    questionInput.disabled = true;
+                    askBtn.disabled = true;
+                    uploadArea.style.borderColor = '#ccc';
+                    uploadArea.style.background = 'transparent';
+                    setUploadStatus('success', 'Document cleared successfully');
+                } else {
+                    setUploadStatus('error', 'Failed to clear document');
+                }
+            } catch (error) {
+                setUploadStatus('error', `Error: ${error.message}`);
+                console.error('Clear error:', error);
+            }
+        }
+        
+        // ============================================
+        // EVENT LISTENERS - Wire up the UI
+        // ============================================
+        
+        // Click on upload area → trigger file input
+        uploadArea.addEventListener('click', () => fileInput.click());
+        
+        // Drag over → visual feedback
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        
+        // Drag leave → remove visual feedback
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        
+        // Drop file → handle the file
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const file = files[0];
+                const validTypes = ['application/pdf', 'text/plain'];
+                if (validTypes.includes(file.type) || file.name.endsWith('.pdf') || file.name.endsWith('.txt')) {
+                    selectedFile = file;
+                    updateUI();
+                    setUploadStatus('info', `Selected: ${file.name}`);
+                } else {
+                    setUploadStatus('error', 'Please upload a PDF or text file.');
+                }
+            }
+        });
+        
+        // File input change → user selected a file via click
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                const file = e.target.files[0];
+                const validTypes = ['application/pdf', 'text/plain'];
+                if (validTypes.includes(file.type) || file.name.endsWith('.pdf') || file.name.endsWith('.txt')) {
+                    selectedFile = file;
+                    updateUI();
+                    setUploadStatus('info', `Selected: ${file.name}`);
+                } else {
+                    setUploadStatus('error', 'Please upload a PDF or text file.');
+                    fileInput.value = '';  // Clear the input
+                }
+            }
+        });
+        
+        // Upload button click
+        uploadBtn.addEventListener('click', uploadFile);
+        
+        // Clear button click
+        clearBtn.addEventListener('click', clearDocument);
+        
+        // Ask button click
+        askBtn.addEventListener('click', askQuestion);
+        
+        // Enter key in question input → trigger ask
+        questionInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                askQuestion();
+            }
+        });
+        
+        // ============================================
+        // INITIALIZE - Run when page loads
+        // ============================================
+        checkStatus();   // Check if backend is reachable
+        updateUI();      // Set initial button states
+        
+        // Poll status every 30 seconds (keeps UI in sync)
+        setInterval(checkStatus, 30000);
+    </script>
+</body>
+</html>
