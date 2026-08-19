@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG Document QA System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 800px;
+            width: 100%;
+        }
+        
+        h1 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+        
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+        }
+        
+        .section h2 {
+            color: #444;
+            font-size: 18px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .upload-area {
+            border: 2px dashed #ccc;
+            padding: 30px;
+            text-align: center;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .upload-area:hover {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.05);
+        }
+        
+        .upload-area.dragover {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+        }
+        
+        .upload-icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+        }
+        
+        .upload-text {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .file-info {
+            margin-top: 10px;
+            padding: 10px;
+            background: #e8f4fd;
+            border-radius: 8px;
+            color: #0056b3;
+            font-size: 14px;
+        }
+        
+        .btn {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+        
+        .btn-secondary:hover {
+            background: #d0d0d0;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        
+        .question-area {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .question-input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+        
+        .question-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .answer-area {
+            margin-top: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            display: none;
+        }
+        
+        .answer-area.visible {
+            display: block;
+        }
+        
+        .answer-text {
+            color: #333;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+        
+        .sources {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #e0e0e0;
+        }
+        
+        .sources-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .source-item {
+            font-size: 13px;
+            color: #888;
+            padding: 5px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .source-item:last-child {
+            border-bottom: none;
+        }
+        
+        .status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .status.info {
+            background: #cce5ff;
+            color: #004085;
+        }
+        
+        .spinner {
+            display: inline-block;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .badge.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .badge.warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+            
+            .question-area {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>
+            📄 RAG Document QA
+        </h1>
+        <p class="subtitle">Upload a document and ask questions about it using AI</p>
+        
+        <!-- Upload Section -->
+        <div class="section">
+            <h2>📤 Upload Document</h2>
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📂</div>
+                <div class="upload-text">
+                    <strong>Click to upload</strong> or drag and drop<br>
+                    Supports PDF and text files
+                </div>
+                <input type="file" class="file-input" id="fileInput" accept=".pdf,.txt">
+            </div>
+            <div id="fileInfo" class="file-info" style="display: none;"></div>
+            <div style="margin-top: 15px; display: flex; gap: 10px;">
+                <button class="btn btn-primary" id="uploadBtn" disabled>Upload Document</button>
+                <button class="btn btn-danger" id="clearBtn">Clear Document</button>
+            </div>
+            <div id="uploadStatus"></div>
+        </div>
+        
+        <!-- Question Section -->
+        <div class="section">
+            <h2>❓ Ask a Question</h2>
+            <div class="question-area">
+                <input type="text" class="question-input" id="questionInput" placeholder="What would you like to know about the document?" disabled>
+                <button class="btn btn-primary" id="askBtn" disabled>Ask</button>
+            </div>
+            <div id="questionStatus"></div>
+        </div>
+        
+        <!-- Answer Section -->
+        <div class="answer-area" id="answerArea">
+            <div class="answer-text" id="answerText"></div>
+            <div class="sources">
+                <div class="sources-title">📚 Sources</div>
+                <div id="sourcesList"></div>
+            </div>
+        </div>
+        
+        <!-- Status -->
+        <div id="systemStatus" class="status info">System ready. Please upload a document.</div>
+    </div>
+    
+    <script>
+        // Configuration - Update this with your Render backend URL
+        const BACKEND_URL = 'https://your-backend-url.onrender.com'; // Replace with your actual backend URL
+        
+        // DOM Elements
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const questionInput = document.getElementById('questionInput');
+        const askBtn = document.getElementById('askBtn');
+        const answerArea = document.getElementById('answerArea');
+        const answerText = document.getElementById('answerText');
+        const sourcesList = document.getElementById('sourcesList');
+        const uploadStatus = document.getElementById('uploadStatus');
+        const questionStatus = document.getElementById('questionStatus');
+        const systemStatus = document.getElementById('systemStatus');
+        
+        let selectedFile = null;
+        let hasDocument = false;
+        
+        // Check backend status on load
+        async function checkStatus() {
+            try {
+                const response = await fetch(`${BACKEND_URL}/status`);
+                if (response.ok) {
+                    const data = await response.json();
+                    hasDocument = data.has_document;
+                    updateUI();
+                    setStatus('info', 'System ready. ' + (hasDocument ? 'Document loaded.' : 'Upload a document.'));
+                } else {
+                    setStatus('error', 'Backend server is running but returned error. Please check the logs.');
+                }
+            } catch (error) {
+                setStatus('error', 'Cannot connect to backend. Make sure the server is running and CORS is configured.');
+                console.error('Status check error:', error);
+            }
+        }
+        
+        // Update UI based on state
+        function updateUI() {
+            const hasFile = selectedFile !== null;
+            uploadBtn.disabled = !hasFile;
+            questionInput.disabled = !hasDocument;
+            askBtn.disabled = !hasDocument;
+            
+            if (hasFile) {
+                fileInfo.style.display = 'block';
+                fileInfo.textContent = `📎 ${selectedFile.name} (${(selectedFile.size / 1024).toFixed(1)} KB)`;
+            } else {
+                fileInfo.style.display = 'none';
+            }
+        }
+        
+        // Set status message
+        function setStatus(type, message) {
+            systemStatus.className = `status ${type}`;
+            systemStatus.textContent = message;
+        }
+        
+        // Show status in upload section
+        function setUploadStatus(type, message) {
+            uploadStatus.className = `status ${type}`;
+            uploadStatus.textContent = message;
+        }
+        
+        // Show status in question section
+        function setQuestionStatus(type, message) {
+            questionStatus.className = `status ${type}`;
+            questionStatus.textContent = message;
+        }
+        
+        // Upload file
+        async function uploadFile() {
+            if (!selectedFile) return;
+            
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            
+            uploadBtn.disabled = true;
+            uploadBtn.innerHTML = '<span class="spinner">⏳</span> Uploading...';
+            setUploadStatus('info', 'Uploading and processing document...');
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    hasDocument = true;
+                    setUploadStatus('success', `✅ ${data.message} (${data.chunk_count} chunks processed)`);
+                    setStatus('success', `Document "${selectedFile.name}" loaded successfully!`);
+                    updateUI();
+                    
+                    // Clear file selection after upload
+                    selectedFile = null;
+                    fileInput.value = '';
+                    fileInfo.style.display = 'none';
+                    uploadBtn.disabled = true;
+                    
+                    // Enable question section
+                    questionInput.disabled = false;
+                    askBtn.disabled = false;
+                    
+                    // Show success badge on upload area
+                    uploadArea.style.borderColor = '#28a745';
+                    uploadArea.style.background = 'rgba(40, 167, 69, 0.05)';
+                } else {
+                    setUploadStatus('error', `❌ ${data.detail || 'Upload failed'}`);
+                }
+            } catch (error) {
+                setUploadStatus('error', `❌ Error: ${error.message}`);
+                console.error('Upload error:', error);
+            } finally {
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = 'Upload Document';
+            }
+        }
+        
+        // Ask question
+        async function askQuestion() {
+            const question = questionInput.value.trim();
+            if (!question) {
+                setQuestionStatus('error', 'Please enter a question.');
+                return;
+            }
+            
+            if (!hasDocument) {
+                setQuestionStatus('error', 'Please upload a document first.');
+                return;
+            }
+            
+            askBtn.disabled = true;
+            askBtn.innerHTML = '<span class="spinner">⏳</span> Thinking...';
+            setQuestionStatus('info', 'Processing your question...');
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/ask`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ question })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Display answer
+                    answerArea.classList.add('visible');
+                    answerText.textContent = data.answer;
+                    
+                    // Display sources
+                    sourcesList.innerHTML = '';
+                    if (data.sources && data.sources.length > 0) {
+                        data.sources.forEach((source, index) => {
+                            const div = document.createElement('div');
+                            div.className = 'source-item';
+                            div.textContent = `Source ${index + 1}: ${source.content.substring(0, 200)}...`;
+                            sourcesList.appendChild(div);
+                        });
+                    } else {
+                        sourcesList.innerHTML = '<div class="source-item">No sources available</div>';
+                    }
+                    
+                    setQuestionStatus('success', '✅ Answer generated successfully!');
+                } else {
+                    setQuestionStatus('error', `❌ ${data.detail || 'Question failed'}`);
+                }
+            } catch (error) {
+                setQuestionStatus('error', `❌ Error: ${error.message}`);
+                console.error('Question error:', error);
+            } finally {
+                askBtn.disabled = false;
+                askBtn.textContent = 'Ask';
+            }
+        }
+        
+        // Clear document
+        async function clearDocument() {
+            if (!confirm('Are you sure you want to clear the current document?')) return;
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/clear`, {
+                    method: 'POST'
+                });
+                
+                if (response.ok) {
+                    hasDocument = false;
+                    answerArea.classList.remove('visible');
+                    setStatus('info', 'Document cleared. Upload a new document.');
+                    updateUI();
+                    questionInput.disabled = true;
+                    askBtn.disabled = true;
+                    uploadArea.style.borderColor = '#ccc';
+                    uploadArea.style.background = 'transparent';
+                    setUploadStatus('success', 'Document cleared successfully');
+                } else {
+                    setUploadStatus('error', 'Failed to clear document');
+                }
+            } catch (error) {
+                setUploadStatus('error', `Error: ${error.message}`);
+                console.error('Clear error:', error);
+            }
+        }
+        
+        // Event Listeners
+        uploadArea.addEventListener('click', () => fileInput.click());
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const file = files[0];
+                const validTypes = ['application/pdf', 'text/plain'];
+                if (validTypes.includes(file.type) || file.name.endsWith('.pdf') || file.name.endsWith('.txt')) {
+                    selectedFile = file;
+                    updateUI();
+                    setUploadStatus('info', `Selected: ${file.name}`);
+                } else {
+                    setUploadStatus('error', 'Please upload a PDF or text file.');
+                }
+            }
+        });
+        
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                const file = e.target.files[0];
+                const validTypes = ['application/pdf', 'text/plain'];
+                if (validTypes.includes(file.type) || file.name.endsWith('.pdf') || file.name.endsWith('.txt')) {
+                    selectedFile = file;
+                    updateUI();
+                    setUploadStatus('info', `Selected: ${file.name}`);
+                } else {
+                    setUploadStatus('error', 'Please upload a PDF or text file.');
+                    fileInput.value = '';
+                }
+            }
+        });
+        
+        uploadBtn.addEventListener('click', uploadFile);
+        clearBtn.addEventListener('click', clearDocument);
+        
+        askBtn.addEventListener('click', askQuestion);
+        questionInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                askQuestion();
+            }
+        });
+        
+        // Initialize
+        checkStatus();
+        updateUI();
+        
+        // Poll status every 30 seconds
+        setInterval(checkStatus, 30000);
+    </script>
+</body>
+</html>

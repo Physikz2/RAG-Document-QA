@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Virtual Environments
+venv/
+venv*/
+.venv
+env/
+ENV/
+
+# Environment Variables
+.env
+.env.local
+
+# Database
+chroma_db/
+*.db
+*.sqlite
+*.sqlite3
+
+# Uploads
+uploads/
+*.tmp
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+install_log.txt
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Render
+.python-version
