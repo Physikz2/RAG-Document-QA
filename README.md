@@ -14,6 +14,15 @@ A production-ready **Retrieval-Augmented Generation (RAG)** document question-an
 
 ---
 
+## 🌐 Live Demo
+
+- **Frontend**: [https://physikz2.github.io/RAG-Document-QA/](https://physikz2.github.io/RAG-Document-QA/)
+- **Backend API**: [https://rag-document-qa-ty6i.onrender.com/](https://rag-document-qa-ty6i.onrender.com/)
+- **API Docs (Swagger UI)**: [https://rag-document-qa-ty6i.onrender.com/docs](https://rag-document-qa-ty6i.onrender.com/docs)
+- **GitHub Repository**: [https://github.com/Physikz2/RAG-Document-QA](https://github.com/Physikz2/RAG-Document-QA)
+
+---
+
 ## 📖 Overview
 
 This system implements a complete RAG pipeline:
@@ -54,7 +63,7 @@ This system implements a complete RAG pipeline:
 
 ## 📋 Prerequisites
 
-- **Python 3.12**: This project is developed and tested with Python 3.12. Ensure you have it installed.
+- **Python 3.12**: This project is developed and tested with Python 3.12. Ensure you have it installed. **Render uses the `.python-version` file to enforce this.**
 - **Git** (optional, for cloning)
 - **Gemini API Key** from [Google AI Studio](https://aistudio.google.com/)
 
@@ -174,7 +183,7 @@ RAG-Document-QA/
 │   └── chroma_db/              # ChromaDB vector storage
 ├── frontend/
 │   └── index.html              # Single-page web interface
-├── .python-version             # Python version for Render
+├── .python-version             # Python version for Render (3.12)
 ├── .gitignore                  # Git ignore rules
 └── README.md                   # This file
 ```
@@ -200,7 +209,9 @@ RAG-Document-QA/
    - **Key**: `GEMINI_API_KEY`
    - **Value**: `your_gemini_api_key_here` (set as **Secret**)
 
-7. Click **"Create Web Service"**
+7. **Ensure `.python-version` file exists** in the root with `3.12` to enforce Python version compatibility.
+
+8. Click **"Create Web Service"**
 
 ### Frontend (GitHub Pages)
 
